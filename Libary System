@@ -1,0 +1,152 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+
+// Book class
+class Book implements Serializable {
+    private String title;
+    private String author;
+    private String isbn;
+
+    public Book(String title, String author, String isbn) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+    }
+
+    // Getters and setters
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "title='" + title + '\'' +
+                ", author='" + author + '\'' +
+                ", isbn='" + isbn + '\'' +
+                '}';
+    }
+}
+
+// Library class
+class Library {
+    private ArrayList<Book> books;
+
+    public Library() {
+        books = new ArrayList<>();
+    }
+
+    public void addBook(Book book) {
+        books.add(book);
+    }
+
+    public Book findBookByTitle(String title) throws BookNotFoundException {
+        for (Book book : books) {
+            if (book.getTitle().equalsIgnoreCase(title)) {
+                return book;
+            }
+        }
+        throw new BookNotFoundException("Book not found: " + title);
+    }
+
+    public void saveLibraryToFile(String filename) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
+            oos.writeObject(books);
+            System.out.println("Library saved to file: " + filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadLibraryFromFile(String filename) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
+            books = (ArrayList<Book>) ois.readObject();
+            System.out.println("Library loaded from file: " + filename);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+// Exception classes
+class BookNotFoundException extends Exception {
+    public BookNotFoundException(String message) {
+        super(message);
+    }
+}
+
+// GUI class
+public class LMSApp {
+    private JFrame frame;
+    private Library library;
+
+    public LMSApp() {
+        library = new Library();
+        initialize();
+    }
+
+    private void initialize() {
+        frame = new JFrame("Library Management System");
+        frame.setBounds(100, 100, 450, 300);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        frame.getContentPane().add(panel, BorderLayout.CENTER);
+        panel.setLayout(new FlowLayout());
+
+        JLabel titleLabel = new JLabel("Title:");
+        panel.add(titleLabel);
+
+        JTextField titleField = new JTextField(20);
+        panel.add(titleField);
+
+        JButton addButton = new JButton("Add Book");
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String title = titleField.getText().trim();
+                Book book = new Book(title, "Unknown", "0000");
+                library.addBook(book);
+                JOptionPane.showMessageDialog(frame, "Book added successfully: " + book.toString());
+            }
+        });
+        panel.add(addButton);
+
+        JButton saveButton = new JButton("Save Library");
+        saveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                library.saveLibraryToFile("library.dat");
+            }
+        });
+        panel.add(saveButton);
+
+        JButton loadButton = new JButton("Load Library");
+        loadButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                library.loadLibraryFromFile("library.dat");
+                JOptionPane.showMessageDialog(frame, "Library loaded successfully.");
+            }
+        });
+        panel.add(loadButton);
+
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new LMSApp();
+            }
+        });
+    }
+}
